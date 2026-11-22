@@ -35,39 +35,50 @@ agentic-sar-copilot/
 
 | Column | Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
-| `customer_id` | `TEXT` | `PRIMARY KEY` | Unique customer identifier (e.g., `CUST_101`) |
-| `full_name` | `TEXT` | `NOT NULL` | Subject legal name |
-| `occupation` | `TEXT` | `NOT NULL` | Declared profession at onboarding |
+| `customer_id` | `TEXT` | `PRIMARY KEY` | Unique customer identifier (`CUST_101` – `CUST_108`) |
+| `full_name` | `TEXT` | `NOT NULL` | Subject legal or business name |
+| `age` | `INTEGER` | `NOT NULL` | Customer age in years (used for `age >= 60` EFE check) |
+| `occupation` | `TEXT` | `NOT NULL` | Stated profession at onboarding |
 | `declared_monthly_income` | `REAL` | `NOT NULL` | Stated monthly income in USD |
 | `account_opened_date` | `TEXT` | `NOT NULL` | ISO-8601 onboarding date |
 | `kyc_risk_rating` | `TEXT` | `NOT NULL` | `LOW`, `MEDIUM`, or `HIGH` |
+| `registered_device_id` | `TEXT` | `NOT NULL` | Known primary device fingerprint |
 
 ### Table: `transactions`
 
 | Column | Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
-| `txn_id` | `TEXT` | `PRIMARY KEY` | Unique transaction reference (`TXN_9001`) |
+| `txn_id` | `TEXT` | `PRIMARY KEY` | Unique transaction reference (`TXN_1011`) |
 | `customer_id` | `TEXT` | `FOREIGN KEY` | References `customers(customer_id)` |
 | `direction` | `TEXT` | `NOT NULL` | `INBOUND` or `OUTBOUND` |
 | `channel` | `TEXT` | `NOT NULL` | `P2P`, `ACH`, `WIRE`, or `CARD_ACQUIRING` |
 | `counterparty_id` | `TEXT` | `NOT NULL` | External sender/recipient identifier |
+| `counterparty_name` | `TEXT` | `NOT NULL` | External counterparty display name |
+| `is_new_counterparty` | `INTEGER` | `NOT NULL` | `1` if first-time counterparty, `0` otherwise |
 | `amount_usd` | `REAL` | `NOT NULL` | Transaction value in USD |
 | `timestamp` | `TEXT` | `NOT NULL` | ISO-8601 UTC timestamp |
+| `device_id` | `TEXT` | `NOT NULL` | Session device fingerprint |
+| `ip_country` | `TEXT` | `NOT NULL` | ISO-3166 country code |
+| `memo_or_tag` | `TEXT` | `NOT NULL` | Payment memo or risk telemetry tag |
+| `security_event` | `TEXT` | `NULLABLE` | Auth anomaly (`PASSWORD_RESET_NEW_DEVICE`, etc.) |
 
 ---
 
-## 3. Deterministic Forensic Formulas (`src/agents/txn_agent.py`)
+## 3. Supported FinCrime Typology Rules & Role Classification (`src/agents/typology_agent.py`)
 
-1. **Income-to-Volume Deviation Ratio:**
-   $$\text{Income Multiple} = \frac{\text{Total 30-Day Inbound Volume}}{\text{Declared Monthly Income}}$$
-   *Flagged if $\text{Income Multiple} \ge 3.0\times$.*
+Every investigation classifies both the **Typology** and the **Subject Role** (`COMPLICIT_ACTOR` vs. `VICTIM` vs. `NEUTRAL_BENIGN`):
 
-2. **Rapid Pass-Through (Mule) Ratio:**
-   $$\text{Pass-Through Ratio} = \frac{\text{Outbound Volume within 60 mins of Inbound Credit}}{\text{Total Inbound Volume}}$$
-   *Flagged as `RAPID_PASS_THROUGH_MULE` if $\text{Pass-Through Ratio} \ge 0.80$.*
+| Typology Code | Category | Trigger Condition | Subject Role |
+| :--- | :--- | :--- | :--- |
+| `CSAM_ZERO_TOLERANCE_ESCALATION` | CSAM / Severe Harm | High-risk exploitation metadata match (`IMMEDIATE_ZERO_TOLERANCE_ESCALATION`) | `COMPLICIT_ACTOR` |
+| `ACCOUNT_TAKEOVER_ATO` | Account Takeover | Unrecognized `device_id` + auth reset event followed by rapid outbound drain | `VICTIM` |
+| `ELDER_FINANCIAL_EXPLOITATION` | Elder Financial Exploitation | `age >= 60` + urgent/imposter outbound transfers to new counterparties (`>= $10,000` or urgency keywords) | `VICTIM` |
+| `MONEY_MULE_PASS_THROUGH` | Money Mule | `>= 4` unique inbound P2P senders + `>= 80%` outbound funneling within 60 mins | `COMPLICIT_ACTOR` |
+| `ML_LAYERING` | Money Laundering (Layering) | Multi-channel movement (`P2P -> WIRE/ACH`) with `>= 80%` pass-through `< 60 mins` | `COMPLICIT_ACTOR` |
+| `ML_SUSPICIOUS_SOF` | Money Laundering (SOF) | 30-day inbound volume `>= 3.0x` `declared_monthly_income` (`>= $10,000`) | `COMPLICIT_ACTOR` |
+| `SCAM_AUTHORIZED_PUSH` | Scam (APP / Investment) | Escalating outbound push payments to new crypto/investment counterparties (`age < 60`) | `VICTIM` |
+| `PAYMENT_ACQUIRING_FRAUD` | Fraud (Card / Acquiring) | Card-testing / chargeback spikes followed by immediate outbound payout | `COMPLICIT_ACTOR` |
 
-3. **Sub-Threshold Structuring Indicator:**
-   *Count of transactions where $\$8,500 \le \text{amount\_usd} < \$10,000$ within a rolling 7-day window. Flagged as `STRUCTURING_SMURFING` if count $\ge 3$.*
 
 ---
 

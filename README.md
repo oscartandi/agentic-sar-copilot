@@ -1,5 +1,5 @@
 # 🛡️ Agentic SAR Investigation & Narrative Co-Pilot
-[![CI - Agenntic SAR Copilot ](https://github.com/oscartandi/sanctions-entity-resolver/actions/workflows/ci.yml/badge.svg)](https://github.com/oscartandi/sanctions-entity-resolver/actions/workflows/ci.yml)
+[![CI - Agentic SAR Copilot](https://github.com/oscartandi/agentic-sar-copilot/actions/workflows/ci.yml/badge.svg)](https://github.com/oscartandi/agentic-sar-copilot/actions/workflows/ci.yml)
 
 ![Agentic SAR Co-Pilot CI](https://github.com)
 ![Python 3.11+](https://shields.io)

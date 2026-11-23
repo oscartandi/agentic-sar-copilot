@@ -1,10 +1,8 @@
 # 🛡️ Agentic SAR Investigation & Narrative Co-Pilot
 [![CI - Agentic SAR Copilot](https://github.com/oscartandi/agentic-sar-copilot/actions/workflows/ci.yml/badge.svg)](https://github.com/oscartandi/agentic-sar-copilot/actions/workflows/ci.yml)
-
-![Agentic SAR Co-Pilot CI](https://github.com)
-![Python 3.11+](https://shields.io)
-![FastAPI](https://shields.io)
-![Compliance](https://shields.io)
+![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)
+![Compliance Guardrail](https://img.shields.io/badge/Compliance-Deterministic%20Guardrail-success)
 
 A multi-agent Financial Crime investigation platform built with **FastAPI** and **Python** that automates evidence gathering, typology classification, and audit-ready **5Ws (Who, What, When, Where, Why) FinCEN SAR narrative synthesis**—protected by a deterministic **compliance guardrail** that blocks unverified figures or hallucinated transaction citations.
 
